@@ -38,7 +38,7 @@ impl Solver {
                     }
                     position += 1;
                 }
-                Err(_) => panic!("Failed to parse '{}' as a float", item),
+                Err(_) => panic!("Failed to parse '{}' as a number", item),
             }
         }
 
