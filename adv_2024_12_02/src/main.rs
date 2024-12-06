@@ -27,7 +27,7 @@ impl Data {
     pub fn add(&mut self, line: &str) {
         let mut row = Row::new();
         for item in line.split_whitespace() {
-            match item.parse::<u32>() {
+            match item.parse::<i32>() {
                 Ok(value) => row.data.push(value),
                 Err(_) => panic!("Failed to parse '{}' as a number", item),
             }
@@ -38,17 +38,15 @@ impl Data {
 
     pub fn problem_one(&mut self) {
         for row in &mut self.rows {
-            if row.is_safe() {
+            if row.check(false) {
                 self.total_safe += 1;
-            } else {
-                println!("{:?}", row);
             }
         }
     }
 
     pub fn problem_two(&mut self) {
         for row in &mut self.rows {
-            if row.is_safe_with_skip_level() {
+            if row.check(true) {
                 self.total_safe_with_skip += 1;
             }
         }
@@ -57,7 +55,7 @@ impl Data {
 
 #[derive(Clone, Debug)]
 struct Row {
-    data: Vec<u32>,
+    data: Vec<i32>,
 }
 
 impl Row {
@@ -65,45 +63,50 @@ impl Row {
         Self { data: vec![] }
     }
 
-    pub fn is_safe(&self) -> bool {
-        let is_asc = self
-            .data
-            .first()
-            .zip(self.data.get(1))
-            .map_or(false, |(first, second)| first < second);
+    pub fn check(&self, retry: bool) -> bool {
+        let is_safe = self.is_safe(&self.data);
+        match (is_safe, retry) {
+            (true, true) => is_safe,
+            (true, false) => is_safe,
+            (false, true) => {
+                let mut index = 0;
+                loop {
+                    let mut data = self.data.clone();
 
-        self.data.windows(2).all(|window| {
-            let (prev, curr) = (window[0] as i32, window[1] as i32);
+                    data.remove(index);
 
-            if !self.to_owned().check_if_safe(prev, curr, is_asc) {
+                    if self.is_safe(&data) {
+                        println!("{:?}", data);
+                        return true;
+                    }
+
+                    index += 1;
+
+                    if index == self.data.len() {
+                        return false;
+                    }
+                }
+            }
+            _ => false,
+        }
+    }
+
+    fn is_safe(&self, vec: &[i32]) -> bool {
+        let is_asc = vec[0] <= vec[1];
+        vec.windows(2).all(|window| {
+            let (prev, curr) = (window[0], window[1]);
+
+            let diff = curr - prev;
+
+            if is_asc && diff < 0 {
+                return false;
+            }
+            if !is_asc && diff > 0 {
                 return false;
             }
 
-            true
+            (1..=3).contains(&diff.abs())
         })
-    }
-
-    pub fn is_safe_with_skip_level(&self) -> bool {
-        let _is_asc = self
-        .data
-        .first()
-        .zip(self.data.get(1))
-        .map_or(false, |(first, second)| first < second);
-
-        false
-    }
-
-    fn check_if_safe(self, prev: i32, curr: i32, is_asc: bool) -> bool {
-        let diff = curr as i32 - prev as i32;
-
-        if is_asc && diff < 0 {
-            return false;
-        }
-        if !is_asc && diff > 0 {
-            return false;
-        }
-
-        (1..=3).contains(&diff.abs())
     }
 }
 
@@ -144,6 +147,6 @@ mod tests {
         let mut data = feed("data.txt");
         data.problem_two();
 
-        assert_eq!(data.total_safe_with_skip, 0);
+        assert_eq!(data.total_safe_with_skip, 528);
     }
 }
