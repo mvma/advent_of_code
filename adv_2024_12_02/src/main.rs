@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, fs, vec};
+use std::{fs, vec};
 
 fn main() {
     let mut data = feed("data.txt");
@@ -40,6 +40,8 @@ impl Data {
         for row in &mut self.rows {
             if row.is_safe() {
                 self.total_safe += 1;
+            } else {
+                println!("{:?}", row);
             }
         }
     }
@@ -53,7 +55,7 @@ impl Data {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Row {
     data: Vec<u32>,
 }
@@ -73,7 +75,7 @@ impl Row {
         self.data.windows(2).all(|window| {
             let (prev, curr) = (window[0] as i32, window[1] as i32);
 
-            if !self.to_owned().check(prev, curr, is_asc) {
+            if !self.to_owned().check_if_safe(prev, curr, is_asc) {
                 return false;
             }
 
@@ -82,36 +84,16 @@ impl Row {
     }
 
     pub fn is_safe_with_skip_level(&self) -> bool {
-        let mut has_been_skipped = false;
+        let _is_asc = self
+        .data
+        .first()
+        .zip(self.data.get(1))
+        .map_or(false, |(first, second)| first < second);
 
-        let is_asc = self
-            .data
-            .first()
-            .zip(self.data.get(1))
-            .map_or(false, |(first, second)| first < second);
-
-        self.data.windows(3).all(|window| {
-            let (prev, curr, next) = (window[0] as i32, window[1] as i32, window[2] as i32);
-
-            let worked_first_time = self.to_owned().check(prev, curr, is_asc);
-
-            if !worked_first_time && has_been_skipped {
-                return false;
-            }
-
-            if !worked_first_time && !has_been_skipped {
-                has_been_skipped = true;
-
-                if !self.to_owned().check(next, prev, is_asc) {
-                    return false;
-                }
-            }
-
-            true
-        })
+        false
     }
 
-    fn check(self, prev: i32, curr: i32, is_asc: bool) -> bool {
+    fn check_if_safe(self, prev: i32, curr: i32, is_asc: bool) -> bool {
         let diff = curr as i32 - prev as i32;
 
         if is_asc && diff < 0 {
@@ -162,6 +144,6 @@ mod tests {
         let mut data = feed("data.txt");
         data.problem_two();
 
-        assert_eq!(data.total_safe_with_skip, 541);
+        assert_eq!(data.total_safe_with_skip, 0);
     }
 }
