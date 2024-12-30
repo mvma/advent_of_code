@@ -93,14 +93,18 @@ fn second(data: &mut Data) {
     println!("second={}", total);
 }
 
-// 5479
 fn organize(messy: &mut Vec<u64>, rules: &HashSet<(u64, u64)>) {
-    for index in 0..messy.len() - 1 {
+    let mut index = 0;
+    while index < messy.len() - 1 {
         let span = &messy[index..=index + 1];
         if !in_order(span, rules) {
             messy.swap(index, index + 1);
-            organize(messy, rules);
-            break;
+
+            if index > 0 {
+                index -= 1;
+            }
+        } else {
+            index += 1;
         }
     }
 }
