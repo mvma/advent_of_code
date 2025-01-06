@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fmt::format, fs};
 
 fn main() {
     first();
